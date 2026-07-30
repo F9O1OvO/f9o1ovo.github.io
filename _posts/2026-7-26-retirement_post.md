@@ -35,8 +35,8 @@ tags:
 2026.6.9-2026.6.23      小马智行高精地图开发
 2026.7.10-？            TX金铲铲之战游戏客户端
 
-![时间]({{ site.baseurl }}/img-post/bilibili.jpg.png)
-
+![时间]({{ site.baseurl }}/img-post/bilibili.jpg)
+![时间]({{ site.baseurl }}/img-post/wx号.png)
 
 # 我应当，我想要，我是
 也可以叫做骆驼，狮子，小孩
