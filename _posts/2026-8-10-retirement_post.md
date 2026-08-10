@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      成为镜子本身
-subtitle:   一些想说的
+subtitle:   一些思考
 date:       2026-8-10
 author:     F9O1
 header-img: img-post/资本家我草泥马.jpg
