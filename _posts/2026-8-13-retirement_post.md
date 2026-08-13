@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      公平，公平，还是他妈的公平
-subtitle:   一些思考
+subtitle:   利益相关？
 date:       2026-8-13
 author:     F9O1
 header-img: img-post/资本家我草泥马.jpg
