@@ -1,10 +1,10 @@
 ---
 layout:     post
 title:      公平，公平，还是他妈的公平
-subtitle:   利益相关？
+subtitle:   杀人放火金腰带，铺桥补路无尸骸
 date:       2026-8-13
 author:     F9O1
-header-img: img-post/资本家我草泥马.jpg
+header-img: img-post/公平.png
 catalog: false
 tags:
     - 矩阵
@@ -12,7 +12,13 @@ tags:
 
 
 # 前情提要
-![时间]({{ site.baseurl }}/img-post/公平.png)
+![时间]({{ site.baseurl }}/img-post/评价asu.jpg)
+
+以上就是这篇博客的起因。
+先表明我的个人态度，从26届同届在找工作这坨粪坑里面刨金的理工男身份，我反感厌恶她的包装以及行为的同时，我也很佩服这种人。
+
+写这篇文章的主要目的也确实不是为了给酥神洗白或者说是攻击酥神。
+
 
 # 谬误
 
@@ -23,3 +29,5 @@ tags:
 # 乌托邦
 
 # 尾语
+
+在最后的这里，我想我应该也可以说些放飞自我的话了，
