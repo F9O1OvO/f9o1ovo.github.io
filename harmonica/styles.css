@@ -1,0 +1,390 @@
+:root {
+  --bg: #14110e;
+  --panel: #1f1a15;
+  --ink: #f4efe6;
+  --muted: #b5a894;
+  --line: rgba(244, 239, 230, 0.12);
+  --amber: #e4b15a;
+  --flat: #7eb6d9;
+  --sharp: #e0896e;
+  --metal: #c9c0b2;
+  --wood: #5a3b22;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top, #2a2218 0%, transparent 38%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.page {
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 64px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--amber);
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-weight: 650;
+}
+
+h1 {
+  font-size: clamp(28px, 5vw, 42px);
+}
+
+.lead,
+.status-label,
+.help,
+.mode-btn small {
+  color: var(--muted);
+}
+
+.lead {
+  margin: 10px 0 0;
+}
+
+.status {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.status-card,
+.mode-btn,
+.help,
+.score {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.status-card {
+  padding: 16px 18px;
+}
+
+.status-label,
+.volume label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.status-card strong {
+  font-size: 22px;
+}
+
+.mode-natural { color: var(--amber); }
+.mode-flat { color: var(--flat); }
+.mode-sharp { color: var(--sharp); }
+
+.volume input {
+  width: 100%;
+  accent-color: var(--amber);
+}
+
+.harmonica-wrap {
+  overflow-x: auto;
+  padding: 12px 0 24px;
+}
+
+.harmonica {
+  position: relative;
+  min-width: 760px;
+  padding: 18px 22px 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #d8d1c4 0%, #9d9486 100%);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.plate {
+  height: 22px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f3eee6, #8f877a);
+}
+
+.comb {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  padding: 16px 8px;
+  margin: 8px 0;
+  background: linear-gradient(180deg, #6d4a2c, #3d2414);
+  border-radius: 12px;
+}
+
+.hole {
+  appearance: none;
+  border: 0;
+  padding: 12px 6px 14px;
+  border-radius: 18px;
+  background: #1a120c;
+  color: #f7f1e6;
+  cursor: default;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.hole kbd {
+  min-width: 28px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+}
+
+.hole .solfege {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.hole .pitch {
+  font-size: 12px;
+  color: #d7c7aa;
+}
+
+.hole.is-on {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 2px var(--amber), 0 0 24px rgba(228, 177, 90, 0.45);
+}
+
+.hole.is-flat.is-on { box-shadow: inset 0 0 0 2px var(--flat), 0 0 24px rgba(126, 182, 217, 0.4); }
+.hole.is-sharp.is-on { box-shadow: inset 0 0 0 2px var(--sharp), 0 0 24px rgba(224, 137, 110, 0.4); }
+
+.slide {
+  position: absolute;
+  right: 10px;
+  top: 18px;
+  width: 18px;
+  height: calc(100% - 36px);
+  border-radius: 999px;
+  background: #7d766b;
+  transform: translateX(0);
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.harmonica.is-flat .slide {
+  transform: translateX(-10px);
+  background: var(--flat);
+}
+
+.harmonica.is-sharp .slide {
+  transform: translateX(10px);
+  background: var(--sharp);
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mode-btn {
+  color: inherit;
+  padding: 16px;
+  text-align: left;
+  cursor: default;
+  pointer-events: none;
+}
+
+.mode-btn kbd,
+.help kbd {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mode-btn span {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.mode-btn.is-active {
+  outline: 2px solid var(--amber);
+}
+
+.score,
+.help {
+  padding: 20px 22px;
+}
+
+.score {
+  margin-bottom: 24px;
+}
+
+.score-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.score-sub,
+.score-hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.score-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-btn,
+.text-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.file-btn input {
+  display: none;
+}
+
+#scoreSource {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #16120e;
+  color: var(--ink);
+  font: 14px/1.6 Consolas, "Sarasa Mono SC", monospace;
+  resize: vertical;
+}
+
+.score-view {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.score-line {
+  overflow-x: auto;
+}
+
+.score-notes {
+  display: flex;
+  gap: 4px;
+  min-height: 72px;
+}
+
+.score-note {
+  min-width: 44px;
+  padding: 8px 4px 6px;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.score-note .pitch {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.score-note .finger {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.score-note .lyric {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.score-note.is-rest .pitch {
+  color: var(--muted);
+}
+
+.score-note.is-current {
+  border-color: var(--amber);
+  background: rgba(228, 177, 90, 0.12);
+}
+
+.score-note.is-done {
+  opacity: 0.45;
+}
+
+.score-bar {
+  width: 8px;
+  align-self: stretch;
+  border-left: 2px solid var(--line);
+  margin: 0 4px;
+}
+
+.help h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.help ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.help li + li {
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .status,
+  .modes {
+    grid-template-columns: 1fr;
+  }
+
+  .status-card strong {
+    font-size: 18px;
+  }
+}

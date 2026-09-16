@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>半音阶口琴模拟器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <p class="eyebrow">Chromatic Harmonica</p>
+      <h1>半音阶口琴模拟器</h1>
+      <p class="lead">默认吹自然音。按住鼠标左 / 中 / 右键，才临时变成降调、半音、升调。</p>
+    </header>
+
+    <section class="status" aria-live="polite">
+      <div class="status-card">
+        <span class="status-label">当前调性</span>
+        <strong id="modeLabel" class="mode-natural">自然音</strong>
+      </div>
+      <div class="status-card">
+        <span class="status-label">正在演奏</span>
+        <strong id="noteLabel">—</strong>
+      </div>
+      <div class="status-card volume">
+        <label for="volume">音量</label>
+        <input id="volume" type="range" min="0" max="100" value="72" />
+      </div>
+    </section>
+
+    <section class="harmonica-wrap">
+      <div class="harmonica" id="harmonica" role="application" aria-label="半音阶口琴">
+        <div class="plate plate-top"></div>
+        <div class="comb" id="comb"></div>
+        <div class="plate plate-bottom"></div>
+        <div class="slide" id="slide"></div>
+      </div>
+    </section>
+
+    <section class="modes" aria-label="调性说明">
+      <div class="mode-btn" data-accidental="-12">
+        <kbd>按住左键</kbd>
+        <span>降调</span>
+        <small>低一个八度，可与半音同时按</small>
+      </div>
+      <div class="mode-btn" data-accidental="1" data-kind="chromatic">
+        <kbd>按住中键</kbd>
+        <span>半音</span>
+        <small>钢琴黑键；3、7 无黑键</small>
+      </div>
+      <div class="mode-btn" data-accidental="12">
+        <kbd>按住右键</kbd>
+        <span>升调</span>
+        <small>高一个八度，可与半音同时按</small>
+      </div>
+    </section>
+
+    <section class="score" id="scorePanel">
+      <div class="score-head">
+        <div>
+          <h2>曲谱</h2>
+          <p class="score-sub" id="scoreTitle">尚未导入。可粘贴简谱或打开 .txt 文件。</p>
+        </div>
+        <div class="score-actions">
+          <label class="file-btn">
+            导入文件
+            <input id="scoreFile" type="file" accept=".txt,.jianpu,.json,text/plain" />
+          </label>
+          <button type="button" id="scoreApply" class="text-btn">载入粘贴</button>
+          <button type="button" id="scoreDemo" class="text-btn">示例练习</button>
+          <button type="button" id="scoreReset" class="text-btn">重置进度</button>
+        </div>
+      </div>
+      <p class="score-hint">支持半音阶口琴谱：数字 1–7；<code>#</code> 推键；<code>()</code> 低音；<code>【】</code> 高音；连写如 <code>#5#4</code> 会拆开。<code>8va:</code> 之后整段再高八度。歌词请自己写在音高下一行（空格对齐）。官方歌词我不能代填。</p>
+      <textarea id="scoreSource" rows="8" spellcheck="false" placeholder="标题: 练习&#10;&#10;(345) 555 67 1&#10;1 (7) 2 (6) 5"></textarea>
+      <div id="scoreView" class="score-view" hidden></div>
+    </section>
+
+    <section class="help">
+      <h2>怎么吹</h2>
+      <ol>
+        <li>用 <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> <kbd>M</kbd> <kbd>,</kbd> 分别吹奏 1 2 3 4 5 6 7 1̇。</li>
+        <li>只按键盘是自然音。按住左键降调，按住中键半音，按住右键升调；松开立刻恢复。半音可以和升调或降调同时按住，效果会叠在一起。</li>
+        <li>音孔不能点。曲谱可粘贴或导入 txt，吹对当前高亮音会自动往下走。</li>
+      </ol>
+    </section>
+  </div>
+  <script src="app.js"></script>
+  <script src="score.js"></script>
+</body>
+</html>
