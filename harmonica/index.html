@@ -2,12 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>半音阶口琴模拟器</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="page">
+  <button type="button" class="layout-switch" id="layoutSwitch">手机版</button>
+
+  <div class="page" id="desktopPage">
     <header class="header">
       <p class="eyebrow">Chromatic Harmonica</p>
       <h1>半音阶口琴模拟器</h1>
@@ -86,6 +88,22 @@
       </ol>
     </section>
   </div>
+
+  <div class="mobile-stage" id="mobileStage" aria-hidden="true">
+    <p class="landscape-hint">请将手机横过来，键盘会铺满屏幕</p>
+    <div class="mobile-play">
+      <input id="mobileVolume" class="mobile-volume" type="range" min="0" max="100" value="72" aria-label="音量" />
+      <div class="mobile-modes" aria-label="调性">
+        <button type="button" class="mobile-mode" data-kind="chromatic">半音</button>
+        <span class="mode-split" aria-hidden="true"></span>
+        <button type="button" class="mobile-mode" data-kind="sharp">升调</button>
+        <button type="button" class="mobile-mode is-active" data-kind="natural">自然音</button>
+        <button type="button" class="mobile-mode" data-kind="flat">降调</button>
+      </div>
+      <div class="mobile-pads" id="mobilePads" aria-label="音孔"></div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
   <script src="score.js"></script>
 </body>

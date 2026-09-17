@@ -21,12 +21,19 @@ const comb = document.getElementById("comb");
 const modeLabel = document.getElementById("modeLabel");
 const noteLabel = document.getElementById("noteLabel");
 const volumeInput = document.getElementById("volume");
+const mobileVolume = document.getElementById("mobileVolume");
 const modeButtons = [...document.querySelectorAll(".mode-btn")];
+const mobileModeButtons = [...document.querySelectorAll(".mobile-mode")];
+const mobilePads = document.getElementById("mobilePads");
+const layoutSwitch = document.getElementById("layoutSwitch");
+const mobileStage = document.getElementById("mobileStage");
 
 const voices = new Map();
 const heldButtons = [];
 const heldKeys = new Set();
 const heldUiKinds = new Set();
+const pointerNotes = new Map();
+let layout = "desktop";
 let audioCtx = null;
 let masterGain = null;
 let pianoReady = null;
@@ -161,6 +168,15 @@ function syncModeView() {
     const buttonKind = button.dataset.kind || (Number(button.dataset.accidental) < 0 ? "flat" : "sharp");
     button.classList.toggle("is-active", kinds.has(buttonKind));
   });
+
+  mobileModeButtons.forEach((button) => {
+    const kind = button.dataset.kind;
+    if (kind === "natural") {
+      button.classList.toggle("is-active", !kinds.has("flat") && !kinds.has("sharp"));
+    } else {
+      button.classList.toggle("is-active", kinds.has(kind));
+    }
+  });
 }
 
 function setNoteReadout() {
@@ -180,11 +196,13 @@ function classFromAccidental(value) {
 
 function applyHoleStyle(voice, midi) {
   voice.label = labelForNote(voice.note);
-  if (!voice.hole) return;
-  voice.hole.classList.remove("is-flat", "is-sharp");
   const extraClass = classFromAccidental(midi - voice.baseMidi);
   voice.extraClass = extraClass;
-  if (extraClass) voice.hole.classList.add(extraClass);
+  [voice.hole, padElementFor(voice.note)].forEach((el) => {
+    if (!el) return;
+    el.classList.remove("is-flat", "is-sharp");
+    if (extraClass) el.classList.add(extraClass);
+  });
 }
 
 function retuneFollowingVoices() {
@@ -230,6 +248,7 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
     const current = voices.get(id);
     if (!current || current.token !== token) return;
     if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
+    if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
 
     const sourceMidi = pianoBuffers.has(midi) ? midi : nearestSampleMidi(midi);
     const buffer = pianoBuffers.get(sourceMidi);
@@ -268,10 +287,11 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
     extraClass,
   });
 
-  if (hole) {
-    hole.classList.add("is-on");
-    if (extraClass) hole.classList.add(extraClass);
-  }
+  [hole, padElementFor(note)].forEach((el) => {
+    if (!el) return;
+    el.classList.add("is-on");
+    if (extraClass) el.classList.add(extraClass);
+  });
   setNoteReadout();
 
   if (pianoBuffers.size) {
@@ -300,15 +320,59 @@ function stopVoice(id, immediate = false) {
     }
   });
 
-  if (voice.hole) {
-    voice.hole.classList.remove("is-on", "is-flat", "is-sharp");
-  }
+  [voice.hole, padElementFor(voice.note)].forEach((el) => {
+    if (!el) return;
+    el.classList.remove("is-on", "is-flat", "is-sharp");
+  });
   voices.delete(id);
   setNoteReadout();
 }
 
 function ignoreModifierTarget(target) {
-  return Boolean(target.closest("input, textarea, .volume, .score, .text-btn, .file-btn"));
+  return Boolean(target.closest("input, textarea, .volume, .score, .text-btn, .file-btn, .layout-switch, .mobile-stage"));
+}
+
+function setLayout(next) {
+  layout = next === "mobile" ? "mobile" : "desktop";
+  document.documentElement.classList.toggle("layout-mobile", layout === "mobile");
+  mobileStage.setAttribute("aria-hidden", layout === "mobile" ? "false" : "true");
+  layoutSwitch.textContent = layout === "mobile" ? "电脑版" : "手机版";
+  localStorage.setItem("harmonica-layout", layout);
+  heldButtons.length = 0;
+  heldUiKinds.clear();
+  heldKeys.clear();
+  pointerNotes.clear();
+  [...voices.keys()].forEach((id) => stopVoice(id, true));
+  applyModifierChange();
+}
+
+function padElementFor(note) {
+  return mobilePads.querySelector(`[data-index="${NOTES.indexOf(note)}"]`);
+}
+
+function startPadVoice(pointerId, note, pad) {
+  pointerNotes.set(pointerId, note.key);
+  startVoice(`ptr-${pointerId}`, note, pad, true);
+}
+
+function stopPadVoice(pointerId) {
+  pointerNotes.delete(pointerId);
+  stopVoice(`ptr-${pointerId}`);
+}
+
+function applyMobileMode(kind) {
+  if (kind === "chromatic") {
+    if (heldUiKinds.has("chromatic")) heldUiKinds.delete("chromatic");
+    else heldUiKinds.add("chromatic");
+  } else if (kind === "natural") {
+    heldUiKinds.delete("flat");
+    heldUiKinds.delete("sharp");
+  } else if (kind === "sharp" || kind === "flat") {
+    heldUiKinds.delete("flat");
+    heldUiKinds.delete("sharp");
+    heldUiKinds.add(kind);
+  }
+  applyModifierChange();
 }
 
 function mouseButtonsFromEvent(event) {
@@ -342,18 +406,84 @@ function renderHoles() {
   });
 }
 
+function renderMobilePads() {
+  NOTES.forEach((note, index) => {
+    const pad = document.createElement("button");
+    pad.type = "button";
+    pad.className = "pad-key";
+    pad.dataset.key = note.key;
+    pad.dataset.index = String(index);
+    pad.innerHTML = note.octave > 0
+      ? `<span>${note.degreeNum}</span><span class="oct">˙</span>`
+      : String(note.degreeNum);
+    mobilePads.appendChild(pad);
+  });
+}
+
 function findNoteByKey(key) {
   const normalized = key.length === 1 ? key.toLowerCase() : key;
   return NOTES.find((note) => note.key === normalized);
 }
 
+function setVolume(value) {
+  volume = Number(value) / 100;
+  volumeInput.value = String(value);
+  mobileVolume.value = String(value);
+  if (masterGain) masterGain.gain.value = volume;
+}
+
 renderHoles();
+renderMobilePads();
 syncModeView();
 
-volumeInput.addEventListener("input", () => {
-  volume = Number(volumeInput.value) / 100;
-  if (masterGain) masterGain.gain.value = volume;
+const savedLayout = localStorage.getItem("harmonica-layout");
+if (savedLayout === "mobile" || (!savedLayout && window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900)) {
+  setLayout("mobile");
+}
+
+layoutSwitch.addEventListener("click", () => {
+  setLayout(layout === "mobile" ? "desktop" : "mobile");
 });
+
+volumeInput.addEventListener("input", () => setVolume(volumeInput.value));
+mobileVolume.addEventListener("input", () => setVolume(mobileVolume.value));
+
+mobileModeButtons.forEach((button) => {
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    applyMobileMode(button.dataset.kind);
+  });
+});
+
+mobilePads.addEventListener("pointerdown", (event) => {
+  const pad = event.target.closest(".pad-key");
+  if (!pad) return;
+  event.preventDefault();
+  pad.setPointerCapture(event.pointerId);
+  const note = NOTES.find((item) => item.key === pad.dataset.key);
+  if (!note) return;
+  startPadVoice(event.pointerId, note, pad);
+});
+
+mobilePads.addEventListener("pointermove", (event) => {
+  if (!pointerNotes.has(event.pointerId)) return;
+  const el = document.elementFromPoint(event.clientX, event.clientY);
+  const pad = el && el.closest && el.closest(".pad-key");
+  const nextKey = pad && pad.dataset.key;
+  const currentKey = pointerNotes.get(event.pointerId);
+  if (!nextKey || nextKey === currentKey) return;
+  stopPadVoice(event.pointerId);
+  const note = NOTES.find((item) => item.key === nextKey);
+  startPadVoice(event.pointerId, note, pad);
+});
+
+function endPointer(event) {
+  if (!pointerNotes.has(event.pointerId)) return;
+  stopPadVoice(event.pointerId);
+}
+
+mobilePads.addEventListener("pointerup", endPointer);
+mobilePads.addEventListener("pointercancel", endPointer);
 
 window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
@@ -374,6 +504,7 @@ window.addEventListener("keyup", (event) => {
 });
 
 window.addEventListener("mousedown", (event) => {
+  if (layout === "mobile") return;
   if (event.button === 1) event.preventDefault();
   if (ignoreModifierTarget(event.target)) return;
   syncHeldButtons(mouseButtonsFromEvent(event));
@@ -395,6 +526,7 @@ window.addEventListener("blur", () => {
   heldButtons.length = 0;
   heldUiKinds.clear();
   heldKeys.clear();
+  pointerNotes.clear();
   [...voices.keys()].forEach((id) => stopVoice(id, true));
   applyModifierChange();
 });
