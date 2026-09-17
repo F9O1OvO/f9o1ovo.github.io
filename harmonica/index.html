@@ -100,11 +100,11 @@
     <div class="mobile-play">
       <input id="mobileVolume" class="mobile-volume" type="range" min="0" max="100" value="72" aria-label="音量" />
       <div class="mobile-modes" aria-label="调性">
-        <button type="button" class="mobile-mode" data-kind="chromatic">半音</button>
+        <div class="mobile-mode" data-kind="chromatic" role="button">半音</div>
         <span class="mode-split" aria-hidden="true"></span>
-        <button type="button" class="mobile-mode" data-kind="sharp">升调</button>
-        <button type="button" class="mobile-mode is-active" data-kind="natural">自然音</button>
-        <button type="button" class="mobile-mode" data-kind="flat">降调</button>
+        <div class="mobile-mode" data-kind="sharp" role="button">升调</div>
+        <div class="mobile-mode is-active" data-kind="natural" role="button">自然音</div>
+        <div class="mobile-mode" data-kind="flat" role="button">降调</div>
       </div>
       <div class="mobile-pads" id="mobilePads" aria-label="音孔"></div>
     </div>

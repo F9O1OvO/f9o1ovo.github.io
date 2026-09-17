@@ -48,33 +48,42 @@ function midiToSampleName(midi) {
   return `${SAMPLE_NAMES[pc]}${octave}`;
 }
 
+function decoderContext() {
+  const Ctor = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  return new Ctor(2, 128, 44100);
+}
+
 function prefetchRawSamples() {
   for (let midi = 48; midi <= 96; midi += 1) {
-    rawSamples.set(
-      midi,
-      fetch(`samples/piano/${midiToSampleName(midi)}.mp3`)
-        .then((res) => (res.ok ? res.arrayBuffer() : null))
-        .catch(() => null)
-    );
+    const job = fetch(`samples/piano/${midiToSampleName(midi)}.mp3`)
+      .then((res) => (res.ok ? res.arrayBuffer() : null))
+      .then(async (raw) => {
+        if (!raw) return null;
+        try {
+          const buffer = await decoderContext().decodeAudioData(raw.slice(0));
+          pianoBuffers.set(midi, buffer);
+        } catch (error) {
+          /* decode later on the playback context */
+        }
+        return raw;
+      })
+      .catch(() => null);
+    rawSamples.set(midi, job);
   }
 }
 
 async function decodeMidi(midi) {
   if (pianoBuffers.has(midi)) return pianoBuffers.get(midi);
-  const rawPromise = rawSamples.get(midi);
-  if (!rawPromise) return null;
-  const raw = await rawPromise;
+  const raw = await rawSamples.get(midi);
   if (!raw) return null;
-  ensureAudio();
-  const buffer = await audioCtx.decodeAudioData(raw.slice(0));
+  const ctx = audioCtx || decoderContext();
+  const buffer = await ctx.decodeAudioData(raw.slice(0));
   pianoBuffers.set(midi, buffer);
   return buffer;
 }
 
-async function bufferForMidi(midi) {
-  const exact = await decodeMidi(midi);
-  if (exact) return { buffer: exact, sourceMidi: midi };
-
+function lookupBuffer(midi) {
+  if (pianoBuffers.has(midi)) return { buffer: pianoBuffers.get(midi), sourceMidi: midi };
   let best = null;
   let bestDist = 99;
   pianoBuffers.forEach((_, key) => {
@@ -84,8 +93,15 @@ async function bufferForMidi(midi) {
       bestDist = dist;
     }
   });
-  if (best != null) return { buffer: pianoBuffers.get(best), sourceMidi: best };
+  if (best != null && bestDist <= 4) return { buffer: pianoBuffers.get(best), sourceMidi: best };
+  return null;
+}
 
+async function bufferForMidi(midi) {
+  const exact = await decodeMidi(midi);
+  if (exact) return { buffer: exact, sourceMidi: midi };
+  const nearby = lookupBuffer(midi);
+  if (nearby) return nearby;
   for (let dist = 1; dist <= 12; dist += 1) {
     for (const candidate of [midi - dist, midi + dist]) {
       const buffer = await decodeMidi(candidate);
@@ -97,9 +113,7 @@ async function bufferForMidi(midi) {
 
 function warmupAudio() {
   ensureAudio();
-  Promise.all(PRIORITY_MIDIS.map(decodeMidi)).then(() => {
-    for (let midi = 48; midi <= 96; midi += 1) decodeMidi(midi);
-  });
+  PRIORITY_MIDIS.forEach(decodeMidi);
 }
 
 function ensureAudio() {
@@ -110,16 +124,11 @@ function ensureAudio() {
   audioCtx = new AudioContext({ latencyHint: "interactive" });
   masterGain = audioCtx.createGain();
   masterGain.gain.value = volume;
+  masterGain.connect(audioCtx.destination);
+}
 
-  const compressor = audioCtx.createDynamicsCompressor();
-  compressor.threshold.value = -12;
-  compressor.knee.value = 6;
-  compressor.ratio.value = 1.8;
-  compressor.attack.value = 0.003;
-  compressor.release.value = 0.12;
-
-  masterGain.connect(compressor);
-  compressor.connect(audioCtx.destination);
+function midiToFreq(midi) {
+  return 440 * 2 ** ((midi - 69) / 12);
 }
 
 function labelForNote(note) {
@@ -260,7 +269,6 @@ function applyModifierChange() {
 
 function startVoice(id, note, hole, followsModifier, options = {}) {
   ensureAudio();
-  if (audioCtx.state === "suspended") audioCtx.resume();
   stopVoice(id, true);
 
   const baseMidi = note.midi;
@@ -268,38 +276,6 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
   const midi = baseMidi + accidental;
   const extraClass = classFromAccidental(accidental);
   const token = Symbol(id);
-
-  const play = async () => {
-    const current = voices.get(id);
-    if (!current || current.token !== token) return;
-    if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
-    if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
-
-    const got = await bufferForMidi(midi);
-    if (!got) return;
-    if (voices.get(id) !== current || current.token !== token) return;
-    if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
-    if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
-
-    const now = audioCtx.currentTime;
-    const src = audioCtx.createBufferSource();
-    src.buffer = got.buffer;
-    src.playbackRate.value = 2 ** ((midi - got.sourceMidi) / 12);
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.9, now + 0.008);
-
-    src.connect(gain);
-    gain.connect(masterGain);
-    src.start(now);
-
-    current.gain = gain;
-    current.nodesToStop = [src];
-    if (!options.retrigger && typeof window.onPlayedLabel === "function") {
-      window.onPlayedLabel(current.label);
-    }
-  };
 
   voices.set(id, {
     token,
@@ -320,7 +296,64 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
     if (extraClass) el.classList.add(extraClass);
   });
   setNoteReadout();
-  play();
+
+  const current = voices.get(id);
+  const got = lookupBuffer(midi);
+  if (got) {
+    connectSample(current, midi, got);
+    if (!options.retrigger && typeof window.onPlayedLabel === "function") {
+      window.onPlayedLabel(current.label);
+    }
+    return;
+  }
+
+  connectTone(current, midi);
+  bufferForMidi(midi).then((loaded) => {
+    if (!loaded || voices.get(id) !== current || current.token !== token) return;
+    if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
+    if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
+    connectSample(current, midi, loaded, true);
+  });
+  if (!options.retrigger && typeof window.onPlayedLabel === "function") {
+    window.onPlayedLabel(current.label);
+  }
+}
+
+function connectSample(voice, midi, got, replace = false) {
+  const now = audioCtx.currentTime;
+  if (replace && voice.gain) {
+    voice.gain.gain.cancelScheduledValues(now);
+    voice.gain.gain.setValueAtTime(Math.max(voice.gain.gain.value, 0.0001), now);
+    voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+    voice.nodesToStop.forEach((node) => {
+      try { node.stop(now + 0.03); } catch (error) { /* already stopped */ }
+    });
+  }
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = got.buffer;
+  src.playbackRate.value = 2 ** ((midi - got.sourceMidi) / 12);
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.85, now);
+  src.connect(gain);
+  gain.connect(masterGain);
+  src.start(now);
+  voice.gain = gain;
+  voice.nodesToStop = [src];
+}
+
+function connectTone(voice, midi) {
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.value = midiToFreq(midi);
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.22, now);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(now);
+  voice.gain = gain;
+  voice.nodesToStop = [osc];
 }
 
 function stopVoice(id, immediate = false) {
@@ -466,9 +499,9 @@ function renderHoles() {
 
 function renderMobilePads() {
   NOTES.forEach((note, index) => {
-    const pad = document.createElement("button");
-    pad.type = "button";
+    const pad = document.createElement("div");
     pad.className = "pad-key";
+    pad.role = "button";
     pad.dataset.key = note.key;
     pad.dataset.index = String(index);
     pad.innerHTML = note.octave > 0
@@ -517,13 +550,58 @@ volumeInput.addEventListener("input", () => setVolume(volumeInput.value));
 mobileVolume.addEventListener("input", () => setVolume(mobileVolume.value));
 
 mobileModeButtons.forEach((button) => {
+  button.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    applyMobileMode(button.dataset.kind);
+  }, { passive: false });
   button.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "touch") return;
     event.preventDefault();
     applyMobileMode(button.dataset.kind);
   });
 });
 
+mobilePads.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+  warmupAudio();
+  if (layout === "mobile") enterFullscreen();
+  for (const touch of event.changedTouches) {
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const pad = el && el.closest && el.closest(".pad-key");
+    if (!pad) continue;
+    const note = NOTES.find((item) => item.key === pad.dataset.key);
+    if (!note) continue;
+    startPadVoice(touch.identifier, note, pad);
+  }
+}, { passive: false });
+
+mobilePads.addEventListener("touchmove", (event) => {
+  event.preventDefault();
+  for (const touch of event.changedTouches) {
+    if (!pointerNotes.has(touch.identifier)) continue;
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const pad = el && el.closest && el.closest(".pad-key");
+    const nextKey = pad && pad.dataset.key;
+    const currentKey = pointerNotes.get(touch.identifier);
+    if (!nextKey || nextKey === currentKey) continue;
+    stopPadVoice(touch.identifier);
+    const note = NOTES.find((item) => item.key === nextKey);
+    startPadVoice(touch.identifier, note, pad);
+  }
+}, { passive: false });
+
+function endTouch(event) {
+  for (const touch of event.changedTouches) {
+    if (!pointerNotes.has(touch.identifier)) continue;
+    stopPadVoice(touch.identifier);
+  }
+}
+
+mobilePads.addEventListener("touchend", endTouch);
+mobilePads.addEventListener("touchcancel", endTouch);
+
 mobilePads.addEventListener("pointerdown", (event) => {
+  if (event.pointerType === "touch") return;
   const pad = event.target.closest(".pad-key");
   if (!pad) return;
   event.preventDefault();

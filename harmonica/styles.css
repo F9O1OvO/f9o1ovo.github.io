@@ -13,6 +13,8 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 html,
@@ -475,6 +477,9 @@ html.layout-mobile .mobile-stage {
 
 .mobile-mode {
   appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: min(9.6vw, 72px);
   height: min(9.6vw, 72px);
   border-radius: 50%;
@@ -516,8 +521,27 @@ html.layout-mobile .mobile-stage {
   padding: 0 4vw;
 }
 
-.pad-key {
+.mobile-mode,
+.pad-key,
+.layout-switch {
+  outline: none;
+  -webkit-appearance: none;
   appearance: none;
+}
+
+.mobile-mode:focus,
+.mobile-mode:active,
+.pad-key:focus,
+.pad-key:active,
+.layout-switch:focus,
+.layout-switch:active {
+  outline: none;
+}
+
+.pad-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 1;
   aspect-ratio: 1;
   max-width: 11.5vw;
