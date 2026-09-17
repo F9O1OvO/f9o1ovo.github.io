@@ -33,6 +33,7 @@ const heldButtons = [];
 const heldKeys = new Set();
 const heldUiKinds = new Set();
 const pointerNotes = new Map();
+const heldModeTouches = new Map();
 let layout = "desktop";
 let audioCtx = null;
 let masterGain = null;
@@ -430,6 +431,7 @@ function setLayout(next) {
   heldUiKinds.clear();
   heldKeys.clear();
   pointerNotes.clear();
+  heldModeTouches.clear();
   [...voices.keys()].forEach((id) => stopVoice(id, true));
   applyModifierChange();
   if (layout === "mobile") enterFullscreen();
@@ -451,19 +453,30 @@ function stopPadVoice(pointerId) {
   stopVoice(`ptr-${pointerId}`);
 }
 
-function applyMobileMode(kind) {
-  if (kind === "chromatic") {
-    if (heldUiKinds.has("chromatic")) heldUiKinds.delete("chromatic");
-    else heldUiKinds.add("chromatic");
-  } else if (kind === "natural") {
+function rebuildHeldUiKinds() {
+  heldUiKinds.clear();
+  let forceNatural = false;
+  heldModeTouches.forEach((kind) => {
+    if (kind === "natural") forceNatural = true;
+    else if (kind === "chromatic") heldUiKinds.add("chromatic");
+    else if (kind === "sharp" || kind === "flat") heldUiKinds.add(kind);
+  });
+  if (forceNatural) {
     heldUiKinds.delete("flat");
     heldUiKinds.delete("sharp");
-  } else if (kind === "sharp" || kind === "flat") {
-    heldUiKinds.delete("flat");
-    heldUiKinds.delete("sharp");
-    heldUiKinds.add(kind);
   }
   applyModifierChange();
+}
+
+function pressMobileMode(pointerId, kind) {
+  heldModeTouches.set(pointerId, kind);
+  rebuildHeldUiKinds();
+}
+
+function releaseMobileMode(pointerId) {
+  if (!heldModeTouches.has(pointerId)) return;
+  heldModeTouches.delete(pointerId);
+  rebuildHeldUiKinds();
 }
 
 function mouseButtonsFromEvent(event) {
@@ -552,12 +565,24 @@ mobileVolume.addEventListener("input", () => setVolume(mobileVolume.value));
 mobileModeButtons.forEach((button) => {
   button.addEventListener("touchstart", (event) => {
     event.preventDefault();
-    applyMobileMode(button.dataset.kind);
+    warmupAudio();
+    for (const touch of event.changedTouches) {
+      pressMobileMode(touch.identifier, button.dataset.kind);
+    }
+  }, { passive: false });
+  button.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    for (const touch of event.changedTouches) releaseMobileMode(touch.identifier);
   }, { passive: false });
   button.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "touch") return;
     event.preventDefault();
-    applyMobileMode(button.dataset.kind);
+    button.setPointerCapture(event.pointerId);
+    pressMobileMode(event.pointerId, button.dataset.kind);
+  });
+  button.addEventListener("pointerup", (event) => {
+    if (event.pointerType === "touch") return;
+    releaseMobileMode(event.pointerId);
   });
 });
 
@@ -598,7 +623,6 @@ function endTouch(event) {
 }
 
 mobilePads.addEventListener("touchend", endTouch);
-mobilePads.addEventListener("touchcancel", endTouch);
 
 mobilePads.addEventListener("pointerdown", (event) => {
   if (event.pointerType === "touch") return;
@@ -629,7 +653,15 @@ function endPointer(event) {
 }
 
 mobilePads.addEventListener("pointerup", endPointer);
-mobilePads.addEventListener("pointercancel", endPointer);
+
+window.addEventListener("selectstart", (event) => event.preventDefault());
+window.addEventListener("gesturestart", (event) => event.preventDefault());
+document.addEventListener("touchend", (event) => {
+  for (const touch of event.changedTouches) {
+    releaseMobileMode(touch.identifier);
+    stopPadVoice(touch.identifier);
+  }
+});
 
 window.addEventListener("keydown", (event) => {
   if (event.repeat) return;
@@ -673,6 +705,7 @@ window.addEventListener("blur", () => {
   heldUiKinds.clear();
   heldKeys.clear();
   pointerNotes.clear();
+  heldModeTouches.clear();
   [...voices.keys()].forEach((id) => stopVoice(id, true));
   applyModifierChange();
 });
