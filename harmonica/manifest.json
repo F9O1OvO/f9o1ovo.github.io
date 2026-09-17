@@ -1,0 +1,9 @@
+{
+  "name": "半音阶口琴",
+  "short_name": "口琴",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1c3340",
+  "theme_color": "#1c3340"
+}

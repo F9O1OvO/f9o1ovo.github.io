@@ -36,10 +36,11 @@ const pointerNotes = new Map();
 let layout = "desktop";
 let audioCtx = null;
 let masterGain = null;
-let pianoReady = null;
 let volume = Number(volumeInput.value) / 100;
 const pianoBuffers = new Map();
+const rawSamples = new Map();
 const SAMPLE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+const PRIORITY_MIDIS = [60, 62, 64, 65, 67, 69, 71, 72, 48, 84];
 
 function midiToSampleName(midi) {
   const pc = ((midi % 12) + 12) % 12;
@@ -47,8 +48,34 @@ function midiToSampleName(midi) {
   return `${SAMPLE_NAMES[pc]}${octave}`;
 }
 
-function nearestSampleMidi(midi) {
-  let best = 72;
+function prefetchRawSamples() {
+  for (let midi = 48; midi <= 96; midi += 1) {
+    rawSamples.set(
+      midi,
+      fetch(`samples/piano/${midiToSampleName(midi)}.mp3`)
+        .then((res) => (res.ok ? res.arrayBuffer() : null))
+        .catch(() => null)
+    );
+  }
+}
+
+async function decodeMidi(midi) {
+  if (pianoBuffers.has(midi)) return pianoBuffers.get(midi);
+  const rawPromise = rawSamples.get(midi);
+  if (!rawPromise) return null;
+  const raw = await rawPromise;
+  if (!raw) return null;
+  ensureAudio();
+  const buffer = await audioCtx.decodeAudioData(raw.slice(0));
+  pianoBuffers.set(midi, buffer);
+  return buffer;
+}
+
+async function bufferForMidi(midi) {
+  const exact = await decodeMidi(midi);
+  if (exact) return { buffer: exact, sourceMidi: midi };
+
+  let best = null;
   let bestDist = 99;
   pianoBuffers.forEach((_, key) => {
     const dist = Math.abs(key - midi);
@@ -57,31 +84,30 @@ function nearestSampleMidi(midi) {
       bestDist = dist;
     }
   });
-  return best;
+  if (best != null) return { buffer: pianoBuffers.get(best), sourceMidi: best };
+
+  for (let dist = 1; dist <= 12; dist += 1) {
+    for (const candidate of [midi - dist, midi + dist]) {
+      const buffer = await decodeMidi(candidate);
+      if (buffer) return { buffer, sourceMidi: candidate };
+    }
+  }
+  return null;
 }
 
-async function loadPianoSamples() {
-  const jobs = [];
-  for (let midi = 48; midi <= 96; midi += 1) {
-    const name = midiToSampleName(midi);
-    jobs.push(
-      fetch(`samples/piano/${name}.mp3`)
-        .then((res) => {
-          if (!res.ok) throw new Error(name);
-          return res.arrayBuffer();
-        })
-        .then((raw) => audioCtx.decodeAudioData(raw))
-        .then((buffer) => {
-          pianoBuffers.set(midi, buffer);
-        })
-    );
-  }
-  await Promise.all(jobs);
+function warmupAudio() {
+  ensureAudio();
+  Promise.all(PRIORITY_MIDIS.map(decodeMidi)).then(() => {
+    for (let midi = 48; midi <= 96; midi += 1) decodeMidi(midi);
+  });
 }
 
 function ensureAudio() {
-  if (audioCtx) return;
-  audioCtx = new AudioContext();
+  if (audioCtx) {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return;
+  }
+  audioCtx = new AudioContext({ latencyHint: "interactive" });
   masterGain = audioCtx.createGain();
   masterGain.gain.value = volume;
 
@@ -94,7 +120,6 @@ function ensureAudio() {
 
   masterGain.connect(compressor);
   compressor.connect(audioCtx.destination);
-  pianoReady = loadPianoSamples();
 }
 
 function labelForNote(note) {
@@ -244,20 +269,22 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
   const extraClass = classFromAccidental(accidental);
   const token = Symbol(id);
 
-  const play = () => {
+  const play = async () => {
     const current = voices.get(id);
     if (!current || current.token !== token) return;
     if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
     if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
 
-    const sourceMidi = pianoBuffers.has(midi) ? midi : nearestSampleMidi(midi);
-    const buffer = pianoBuffers.get(sourceMidi);
-    if (!buffer) return;
+    const got = await bufferForMidi(midi);
+    if (!got) return;
+    if (voices.get(id) !== current || current.token !== token) return;
+    if (id.startsWith("key-") && !heldKeys.has(note.key)) return;
+    if (id.startsWith("ptr-") && !pointerNotes.has(Number(id.slice(4)))) return;
 
     const now = audioCtx.currentTime;
     const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    src.playbackRate.value = 2 ** ((midi - sourceMidi) / 12);
+    src.buffer = got.buffer;
+    src.playbackRate.value = 2 ** ((midi - got.sourceMidi) / 12);
 
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, now);
@@ -293,12 +320,7 @@ function startVoice(id, note, hole, followsModifier, options = {}) {
     if (extraClass) el.classList.add(extraClass);
   });
   setNoteReadout();
-
-  if (pianoBuffers.size) {
-    play();
-  } else {
-    pianoReady.then(play);
-  }
+  play();
 }
 
 function stopVoice(id, immediate = false) {
@@ -328,6 +350,39 @@ function stopVoice(id, immediate = false) {
   setNoteReadout();
 }
 
+function isStandaloneApp() {
+  return window.matchMedia("(display-mode: standalone)").matches
+    || window.matchMedia("(display-mode: fullscreen)").matches
+    || window.navigator.standalone === true;
+}
+
+function isFullscreen() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function syncFullscreenClass() {
+  document.documentElement.classList.toggle("is-fullscreen", isStandaloneApp() || isFullscreen());
+}
+
+function enterFullscreen() {
+  if (layout !== "mobile" || isStandaloneApp() || isFullscreen()) {
+    syncFullscreenClass();
+    return;
+  }
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!req) return;
+  const result = req.call(el, { navigationUI: "hide" });
+  if (result && typeof result.catch === "function") result.catch(() => {});
+}
+
+function exitFullscreen() {
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if (exit && isFullscreen()) {
+    exit.call(document).catch(() => {});
+  }
+}
+
 function ignoreModifierTarget(target) {
   return Boolean(target.closest("input, textarea, .volume, .score, .text-btn, .file-btn, .layout-switch, .mobile-stage"));
 }
@@ -344,6 +399,9 @@ function setLayout(next) {
   pointerNotes.clear();
   [...voices.keys()].forEach((id) => stopVoice(id, true));
   applyModifierChange();
+  if (layout === "mobile") enterFullscreen();
+  else exitFullscreen();
+  syncFullscreenClass();
 }
 
 function padElementFor(note) {
@@ -435,6 +493,7 @@ function setVolume(value) {
 renderHoles();
 renderMobilePads();
 syncModeView();
+prefetchRawSamples();
 
 const savedLayout = localStorage.getItem("harmonica-layout");
 if (savedLayout === "mobile" || (!savedLayout && window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900)) {
@@ -444,6 +503,15 @@ if (savedLayout === "mobile" || (!savedLayout && window.matchMedia("(pointer: co
 layoutSwitch.addEventListener("click", () => {
   setLayout(layout === "mobile" ? "desktop" : "mobile");
 });
+
+window.addEventListener("pointerdown", () => {
+  warmupAudio();
+  if (layout === "mobile") enterFullscreen();
+}, { capture: true });
+
+document.addEventListener("fullscreenchange", syncFullscreenClass);
+document.addEventListener("webkitfullscreenchange", syncFullscreenClass);
+syncFullscreenClass();
 
 volumeInput.addEventListener("input", () => setVolume(volumeInput.value));
 mobileVolume.addEventListener("input", () => setVolume(mobileVolume.value));
