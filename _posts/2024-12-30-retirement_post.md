@@ -5,7 +5,7 @@ subtitle:   不算退役贴的退役贴
 date:       2024-12-31
 author:     F9O1
 header-img: img-post/微信图片_20241231170717.jpg
-catalog: false
+catalog: true
 tags:
     - 拾光
 music:

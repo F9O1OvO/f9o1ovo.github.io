@@ -54,7 +54,7 @@
 
     document.addEventListener('click', function (event) {
         var image = event.target;
-        if (!image.matches || !image.matches('article .post-container img')) return;
+        if (!image.matches || !image.matches('article .post-body img')) return;
         event.preventDefault();
         lightbox = document.createElement('div');
         lightbox.className = 'image-lightbox';
@@ -71,4 +71,29 @@
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') closeLightbox();
     });
+
+    var copyButton = document.querySelector('.post-copy-link');
+    if (copyButton) {
+        copyButton.addEventListener('click', function () {
+            var link = copyButton.getAttribute('data-link') || window.location.href;
+            var done = function () {
+                var original = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fa fa-check"></i> 已复制';
+                setTimeout(function () { copyButton.innerHTML = original; }, 1800);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(link).then(done);
+                return;
+            }
+            var helper = document.createElement('textarea');
+            helper.value = link;
+            helper.style.position = 'fixed';
+            helper.style.opacity = '0';
+            document.body.appendChild(helper);
+            helper.select();
+            document.execCommand('copy');
+            document.body.removeChild(helper);
+            done();
+        });
+    }
 })();

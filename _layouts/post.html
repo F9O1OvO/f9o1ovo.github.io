@@ -15,14 +15,12 @@ layout: default
         background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}')
     }
 
-    {% if page.header-mask %}
     header.intro-header .header-mask{
         width: 100%;
         height: 100%;
         position: absolute;
-        background: rgba(0,0,0, {{ page.header-mask }});
+        background: rgba(0,0,0, {{ page.header-mask | default: 0.4 }});
     }
-    {% endif %}
 </style>
 <header class="intro-header" >
     <div class="header-mask"></div>
@@ -65,31 +63,89 @@ layout: default
                 col-md-10 col-md-offset-1
                 post-container">
 
-				{{ content }}
+                <div class="post-card">
+                    <div class="post-body">
+                        {{ content }}
+                    </div>
 
-                <hr style="visibility: hidden;">
+                    <div class="post-signature">
+                        {% if site.sidebar-avatar %}
+                        <img class="post-signature-avatar" src="{{ site.sidebar-avatar | prepend: site.baseurl }}" alt="{% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %}">
+                        {% endif %}
+                        <div class="post-signature-body">
+                            <div class="post-signature-name">{% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %}</div>
+                            <p class="post-signature-desc">{{ site.description }}</p>
+                            {% if page.tags.size > 0 %}
+                            <div class="tags post-signature-tags">
+                                {% for tag in page.tags %}
+                                <a href="{{ site.baseurl }}/tags/#{{ tag }}" title="{{ tag }}">{{ tag }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="post-copy-link" data-link="{{ page.url | prepend: site.url }}">
+                            <i class="fa fa-link"></i> 复制链接
+                        </button>
+                    </div>
+                </div>
 
-                <ul class="pager">
+                <nav class="post-nav">
                     {% if page.previous.url %}
-                    <li class="previous">
-                        <a href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.previous.title}}">
-                        Previous<br>
-                        <span>{{page.previous.title}}</span>
-                        </a>
-                    </li>
+                    <a class="post-nav-item post-nav-prev" href="{{ page.previous.url | prepend: site.baseurl | replace: '//', '/' }}">
+                        <span class="post-nav-label"><i class="fa fa-angle-left"></i> 上一篇</span>
+                        <span class="post-nav-title">{{ page.previous.title }}</span>
+                    </a>
                     {% endif %}
                     {% if page.next.url %}
-                    <li class="next">
-                        <a href="{{ page.next.url | prepend: site.baseurl | replace: '//', '/' }}" data-toggle="tooltip" data-placement="top" title="{{page.next.title}}">
-                        Next<br>
-                        <span>{{page.next.title}}</span>
-                        </a>
-                    </li>
+                    <a class="post-nav-item post-nav-next" href="{{ page.next.url | prepend: site.baseurl | replace: '//', '/' }}">
+                        <span class="post-nav-label">下一篇 <i class="fa fa-angle-right"></i></span>
+                        <span class="post-nav-title">{{ page.next.title }}</span>
+                    </a>
                     {% endif %}
-                </ul>
+                </nav>
 
+                {% comment %} 先数一遍同标签文章，没有的话退回“最近更新” {% endcomment %}
+                {% assign related_total = 0 %}
+                {% for candidate in site.posts %}
+                    {% if candidate.url != page.url %}
+                        {% for tag in candidate.tags %}
+                            {% if page.tags contains tag %}
+                                {% assign related_total = related_total | plus: 1 %}
+                                {% break %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
 
-                {% include comments.html %}
+                {% assign shown = 0 %}
+                <section class="post-related">
+                    <div class="section-title">{% if related_total > 0 %}你可能还想看{% else %}最近更新{% endif %}</div>
+                    <div class="related-grid">
+                        {% for candidate in site.posts %}
+                            {% if shown >= 3 %}{% break %}{% endif %}
+                            {% if candidate.url == page.url %}{% continue %}{% endif %}
+                            {% assign matched = false %}
+                            {% for tag in candidate.tags %}
+                                {% if page.tags contains tag %}{% assign matched = true %}{% break %}{% endif %}
+                            {% endfor %}
+                            {% if related_total > 0 and matched == false %}{% continue %}{% endif %}
+                            {% assign shown = shown | plus: 1 %}
+                            <a class="related-item" href="{{ candidate.url | prepend: site.baseurl | replace: '//', '/' }}">
+                                {% if candidate.header-img %}
+                                <img class="related-cover" src="{{ candidate.header-img | prepend: site.baseurl | prepend: '/' | replace: '//', '/' }}" alt="{{ candidate.title }} 的封面" loading="lazy">
+                                {% else %}
+                                <span class="related-cover related-cover-empty"></span>
+                                {% endif %}
+                                <span class="related-title">{{ candidate.title }}</span>
+                                <span class="related-date">{{ candidate.date | date: "%Y年%-m月%-d日" }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <div class="post-card comments-card">
+                    {% include comments.html %}
+                </div>
 
             </div>  
 
@@ -116,25 +172,56 @@ layout: default
                 col-md-10 col-md-offset-1
                 sidebar-container">
 
-                <!-- Featured Tags -->
-                {% if site.featured-tags %}
-                <section>
-                    <hr class="hidden-sm hidden-xs">
-                    <h5><a href="{{ '/tags/' | prepend: site.baseurl }}">FEATURED TAGS</a></h5>
-                    <div class="tags">
-        				{% for tag in site.tags %}
-                            {% if tag[1].size > {{site.featured-condition-size}} %}
-                				<a href="{{ site.baseurl }}/tags/#{{ tag[0] }}" title="{{ tag[0] }}" rel="{{ tag[1].size }}">
-                                    {{ tag[0] }}
-                                </a>
-                            {% endif %}
-        				{% endfor %}
-        			</div>
-                </section>
-                {% endif %}
+                <hr class="hidden-sm hidden-xs">
+
+                <div class="row sidebar-columns">
+                    <!-- Featured Tags -->
+                    {% if site.featured-tags %}
+                    <section class="col-md-4">
+                        <h5><a href="{{ '/tags/' | prepend: site.baseurl }}">FEATURED TAGS</a></h5>
+                        <div class="tags">
+                            {% for tag in site.tags %}
+                                {% if tag[1].size > {{site.featured-condition-size}} %}
+                                    <a href="{{ site.baseurl }}/tags/#{{ tag[0] }}" title="{{ tag[0] }}" rel="{{ tag[1].size }}">
+                                        {{ tag[0] }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- Recent Posts -->
+                    <section class="col-md-4">
+                        <h5><a href="{{ '/' | prepend: site.baseurl }}">RECENT POSTS</a></h5>
+                        <ul class="sidebar-recent">
+                            {% for recent in site.posts limit: 5 %}
+                            <li>
+                                <a href="{{ recent.url | prepend: site.baseurl | replace: '//', '/' }}">{{ recent.title }}</a>
+                                <span class="sidebar-recent-date">{{ recent.date | date: "%Y-%m-%d" }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+
+                    <!-- Site Stats -->
+                    <section class="col-md-4">
+                        <h5>STATS</h5>
+                        {% assign total_chars = 0 %}
+                        {% for item in site.posts %}
+                            {% assign item_chars = item.content | strip_html | size %}
+                            {% assign total_chars = total_chars | plus: item_chars %}
+                        {% endfor %}
+                        <ul class="sidebar-stats">
+                            <li><strong>{{ site.posts.size }}</strong> 篇文章</li>
+                            <li><strong>{{ site.tags.size }}</strong> 个标签</li>
+                            <li><strong>{{ total_chars | divided_by: 1000 }}k</strong> 字</li>
+                        </ul>
+                    </section>
+                </div>
 
                 <!-- Friends Blog -->
-                {% if site.friends %}
+                {% if site.friends.size > 0 %}
                 <hr>
                 <h5>FRIENDS</h5>
                 <ul class="list-inline">
