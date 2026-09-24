@@ -283,6 +283,18 @@ p, li { line-height: 1.8; }
 }
 
 .side-catalog .catalog-body .active { background-color: rgba(0, 133, 161, .1); }
+/* Clicking a catalog entry leaves the browser focus ring behind; keep it for keyboard only. */
+.side-catalog .catalog-body a:focus,
+.post-nav-item:focus,
+.related-item:focus,
+.post-copy-link:focus { outline: none; }
+.side-catalog .catalog-body a:focus-visible,
+.post-nav-item:focus-visible,
+.related-item:focus-visible,
+.post-copy-link:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 2px;
+}
 
 .post-heading .post-reading-meta {
     display: inline-block;
