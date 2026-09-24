@@ -3,20 +3,40 @@
 <style>
     #waline {
         margin-top: 48px;
-        --waline-font-size: 1.1rem;
+        --waline-font-size: 20px;
         --waline-theme-color: #0085a1;
         --waline-active-color: #00a7c9;
-        --waline-avatar-size: 3.5rem;
+        --waline-avatar-size: 4rem;
     }
     #waline .wl-panel {
         border-radius: 8px;
     }
     #waline .wl-editor {
         min-height: 8em;
+        font-size: 18px;
+        line-height: 1.8;
+    }
+    #waline .wl-meta-head,
+    #waline .wl-meta-head input,
+    #waline .wl-btn {
+        font-size: 16px;
+    }
+    #waline .wl-content {
+        font-size: 18px;
+        line-height: 1.8;
+    }
+    #waline .wl-head,
+    #waline .wl-meta {
+        font-size: 16px;
     }
     @media (max-width: 767px) {
         #waline {
-            --waline-font-size: 1rem;
+            --waline-font-size: 17px;
+            --waline-avatar-size: 3.25rem;
+        }
+        #waline .wl-editor,
+        #waline .wl-content {
+            font-size: 17px;
         }
     }
 </style>
