@@ -21,14 +21,13 @@ description: "失败总是贯穿始终"
             {{ post.content | strip_html | truncate:200 }}
         </div>
     </a>
-    {% assign post_characters = post.content | strip_html | size %}
-    {% assign reading_minutes = post_characters | divided_by: 500 | plus: 1 %}
+    {% assign post_characters = post.content | strip_html | strip_newlines | size %}
     <p class="post-meta">
         {{ post.date | date: "%Y年%-m月%-d日" }}
         <span class="meta-dot">·</span>
         {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %}
         <span class="meta-dot">·</span>
-        约 {{ reading_minutes }} 分钟阅读
+        {{ post_characters }} 字
     </p>
 </div>
 <hr>
