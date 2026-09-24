@@ -13,6 +13,10 @@
         <div class="mp-title" id="mp-title"></div>
         <div class="mp-progress" id="mp-progress"><div class="mp-bar" id="mp-bar"></div></div>
     </div>
+    <div class="mp-volume" id="mp-volume">
+        <button type="button" class="mp-btn" id="mp-mute" title="静音"><i class="fa fa-volume-down"></i></button>
+        <input type="range" id="mp-vol" min="0" max="1" step="0.01" title="音量">
+    </div>
     <button type="button" class="mp-btn mp-fold" id="mp-fold" title="收起"><i class="fa fa-music"></i></button>
 </div>
 
@@ -63,13 +67,21 @@
         cursor: pointer;
     }
     .music-player .mp-bar { width: 0; height: 100%; background: #0085a1; border-radius: 2px; }
+    .music-player .mp-volume { display: flex; align-items: center; flex: none; margin-right: 4px; }
+    .music-player .mp-volume input {
+        width: 70px;
+        margin: 0;
+        accent-color: #0085a1;
+        cursor: pointer;
+    }
     .music-player.folded { padding: 6px; }
     .music-player.folded > :not(.mp-fold):not(audio) { display: none; }
     .music-player.playing .mp-fold i { animation: mp-spin 3s linear infinite; }
     @keyframes mp-spin { to { transform: rotate(360deg); } }
     @media (max-width: 480px) {
         .music-player { right: 10px; bottom: 10px; max-width: calc(100% - 20px); }
-        .music-player .mp-info { width: 110px; }
+        .music-player .mp-info { width: 90px; }
+        .music-player .mp-volume input { width: 50px; }
     }
 </style>
 
@@ -139,6 +151,40 @@
         document.getElementById('mp-prev').style.display = 'none';
         document.getElementById('mp-next').style.display = 'none';
     }
+
+    var $mute = document.getElementById('mp-mute');
+    var $vol = document.getElementById('mp-vol');
+    var VOLUME_KEY = 'music-player-volume';
+    var saved = parseFloat(localStorage.getItem(VOLUME_KEY));
+    var initialVolume = isNaN(saved) ? 0.3 : Math.min(Math.max(saved, 0), 1);
+    audio.volume = initialVolume;
+
+    function renderVolume() {
+        var v = audio.muted ? 0 : audio.volume;
+        $vol.value = v;
+        $mute.innerHTML = '<i class="fa ' + (v === 0 ? 'fa-volume-off' : v < 0.5 ? 'fa-volume-down' : 'fa-volume-up') + '"></i>';
+        $mute.title = audio.muted ? '取消静音' : '静音';
+    }
+
+    $vol.oninput = function () {
+        audio.volume = parseFloat($vol.value);
+        audio.muted = audio.volume === 0;
+        localStorage.setItem(VOLUME_KEY, audio.volume);
+    };
+    $mute.onclick = function () {
+        if (audio.volume === 0) {
+            audio.volume = 0.3;
+            audio.muted = false;
+            localStorage.setItem(VOLUME_KEY, audio.volume);
+        } else {
+            audio.muted = !audio.muted;
+        }
+    };
+    audio.addEventListener('volumechange', renderVolume);
+    renderVolume();
+
+    // iOS ignores audio.volume, so the slider would do nothing there.
+    if (Math.abs(audio.volume - initialVolume) > 0.01) $vol.style.display = 'none';
 
     $player.style.display = '';
     load(0);
