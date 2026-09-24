@@ -5,9 +5,9 @@ header-img: img-post/微信图片_20241231170717.jpg
 email: 572399678@qq.com
 description: "失败总是贯彻始终"
 keyword: "无"
-url: "https://github.com/"          # your host, for absolute URL
+url: "https://f9o1ovo.github.io"     # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
-github_repo: "https://github.com/klovien/klovien.github.io.git" # you code repository
+github_repo: "https://github.com/F9O1OvO/f9o1ovo.github.io" # you code repository
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
@@ -18,12 +18,12 @@ sidebar-avatar: https://storage.live.com/users/0x02275170140eafd5/myprofile/expr
 
 # SNS settings
 RSS: false
-# weibo_username:     qiubaiying
-# zhihu_username:     qiubaiying
-# github_username:    qiubaiying
-# facebook_username:  baiying.qiu.7
-# jianshu_username:   e71990ada2fd
-# twitter_username:   qiubaiying
+github_username:    F9O1OvO
+# weibo_username:
+# zhihu_username:
+# jianshu_username:
+# twitter_username:
+# facebook_username:
 
 
 
@@ -32,7 +32,7 @@ RSS: false
 # from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
 permalink: pretty
 paginate: 10
-exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+exclude: ["less","node_modules","Gruntfile.js","package.json","package-lock.json","README.md","LICENSE"]
 anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
 
 
@@ -57,16 +57,16 @@ kramdown:
 
 # 评论系统
 # Disqus（https://disqus.com/）
-# disqus_username: qiubaiying
+# disqus_username:
 
 # Gitalk
 # gitalk:
 #   enable: true    #是否开启Gitalk评论
-#   clientID: d18b343dd9c7ca49518a                            #生成的clientID
-#   clientSecret: 539e88b8a7feffaddbb553b9c421dfefcbc6eced    #生成的clientSecret
-#   repo: klovien.github.io    #仓库名称
-#   owner: F9O1    #github用户名
-#   admin: F9O1
+#   clientID:       #生成的clientID
+#   clientSecret:   #生成的clientSecret
+#   repo: f9o1ovo.github.io    #仓库名称
+#   owner: F9O1OvO    #github用户名
+#   admin: F9O1OvO
 #   distractionFreeMode: true #是否启用类似FB的阴影遮罩
 
 
@@ -74,11 +74,11 @@ kramdown:
 
 # Analytics settings
 # Baidu Analytics
-# ba_track_id: b50bf2b12b5338a1845e33832976fd68
+# ba_track_id:
 
 # Google Analytics
-# ga_track_id: 'UA-90855596-1'            # Format: UA-xxxxxx-xx
-# ga_domain: auto               # 默认的是 auto, 这里我是自定义了的域名，你如果没有自己的域名，需要改成auto
+# ga_track_id:                  # Format: UA-xxxxxx-xx
+# ga_domain: auto
 
 
 
@@ -96,7 +96,7 @@ service-worker: true
 
 
 
-# 友情链接，请尽量不要删除，谢谢！
+# 友情链接
 friends: [
 
 ]

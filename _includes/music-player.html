@@ -1,0 +1,157 @@
+<!--
+    Front matter usage:
+    music:
+        - music/xxx.mp3
+        - { title: 歌名, src: music/yyy.mp3 }
+-->
+<div id="music-player" class="music-player" style="display:none;">
+    <audio id="music-audio" preload="auto"></audio>
+    <button type="button" class="mp-btn" id="mp-prev" title="上一首"><i class="fa fa-step-backward"></i></button>
+    <button type="button" class="mp-btn mp-play" id="mp-toggle" title="播放 / 暂停"><i class="fa fa-play"></i></button>
+    <button type="button" class="mp-btn" id="mp-next" title="下一首"><i class="fa fa-step-forward"></i></button>
+    <div class="mp-info">
+        <div class="mp-title" id="mp-title"></div>
+        <div class="mp-progress" id="mp-progress"><div class="mp-bar" id="mp-bar"></div></div>
+    </div>
+    <button type="button" class="mp-btn mp-fold" id="mp-fold" title="收起"><i class="fa fa-music"></i></button>
+</div>
+
+<style>
+    .music-player {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        max-width: calc(100% - 40px);
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, .92);
+        border-radius: 30px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, .18);
+        font-size: 14px;
+        transition: all .3s;
+    }
+    .music-player .mp-btn {
+        flex: none;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: #404040;
+        outline: none;
+        cursor: pointer;
+    }
+    .music-player .mp-btn:hover { color: #0085a1; }
+    .music-player .mp-play { background: #0085a1; color: #fff; }
+    .music-player .mp-play:hover { color: #fff; opacity: .85; }
+    .music-player .mp-info { width: 180px; margin: 0 8px; overflow: hidden; }
+    .music-player .mp-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #404040;
+        line-height: 18px;
+    }
+    .music-player .mp-progress {
+        height: 3px;
+        margin-top: 5px;
+        background: #ddd;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    .music-player .mp-bar { width: 0; height: 100%; background: #0085a1; border-radius: 2px; }
+    .music-player.folded { padding: 6px; }
+    .music-player.folded > :not(.mp-fold):not(audio) { display: none; }
+    .music-player.playing .mp-fold i { animation: mp-spin 3s linear infinite; }
+    @keyframes mp-spin { to { transform: rotate(360deg); } }
+    @media (max-width: 480px) {
+        .music-player { right: 10px; bottom: 10px; max-width: calc(100% - 20px); }
+        .music-player .mp-info { width: 110px; }
+    }
+</style>
+
+<script>
+(function () {
+    var baseurl = {{ site.baseurl | jsonify }};
+    var songs = [
+        {% for song in page.music %}
+        {% if song.src %}{ title: {{ song.title | jsonify }}, src: {{ song.src | jsonify }} }{% else %}{ title: null, src: {{ song | jsonify }} }{% endif %}{% unless forloop.last %},{% endunless %}
+        {% endfor %}
+    ].map(function (s) {
+        var src = /^(https?:)?\/\//.test(s.src) ? s.src : baseurl + '/' + s.src.replace(/^\//, '');
+        var name = s.title || decodeURIComponent(src.split('/').pop()).replace(/\.[^.]+$/, '');
+        return { title: name, src: src };
+    });
+    if (!songs.length) return;
+
+    var $player = document.getElementById('music-player');
+    var audio = document.getElementById('music-audio');
+    var $toggle = document.getElementById('mp-toggle');
+    var $title = document.getElementById('mp-title');
+    var $bar = document.getElementById('mp-bar');
+    var $progress = document.getElementById('mp-progress');
+    var index = 0;
+
+    function load(i) {
+        index = (i + songs.length) % songs.length;
+        audio.src = songs[index].src;
+        $title.textContent = songs[index].title;
+        $title.title = songs[index].title;
+        $bar.style.width = 0;
+    }
+
+    function play() {
+        return audio.play();
+    }
+
+    function setPlaying(on) {
+        $toggle.innerHTML = on ? '<i class="fa fa-pause"></i>' : '<i class="fa fa-play"></i>';
+        $player.classList.toggle('playing', on);
+    }
+
+    document.getElementById('mp-prev').onclick = function () { load(index - 1); play(); };
+    document.getElementById('mp-next').onclick = function () { load(index + 1); play(); };
+    document.getElementById('mp-fold').onclick = function () { $player.classList.toggle('folded'); };
+    $toggle.onclick = function () { audio.paused ? play() : audio.pause(); };
+
+    $progress.onclick = function (e) {
+        if (!audio.duration) return;
+        var rect = $progress.getBoundingClientRect();
+        audio.currentTime = (e.clientX - rect.left) / rect.width * audio.duration;
+    };
+
+    audio.addEventListener('play', function () { setPlaying(true); });
+    audio.addEventListener('pause', function () { setPlaying(false); });
+    audio.addEventListener('timeupdate', function () {
+        if (audio.duration) $bar.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    });
+    audio.addEventListener('ended', function () { load(index + 1); play(); });
+    audio.addEventListener('error', function () {
+        console.warn('music: failed to load ' + songs[index].src);
+        if (songs.length > 1) { load(index + 1); play(); }
+    });
+
+    if (songs.length === 1) {
+        audio.loop = true;
+        document.getElementById('mp-prev').style.display = 'none';
+        document.getElementById('mp-next').style.display = 'none';
+    }
+
+    $player.style.display = '';
+    load(0);
+
+    // Browsers block autoplay with sound until the user interacts with the page.
+    play().catch(function () {
+        var events = ['click', 'touchstart', 'keydown'];
+        function start(e) {
+            events.forEach(function (ev) { document.removeEventListener(ev, start, true); });
+            if ($player.contains(e.target)) return;
+            if (audio.paused) play();
+        }
+        events.forEach(function (ev) { document.addEventListener(ev, start, true); });
+    });
+})();
+</script>

@@ -10,8 +10,6 @@ const PRECACHE = 'precache-v1';
 const RUNTIME = 'runtime';
 const HOSTNAME_WHITELIST = [
   self.location.hostname,
-  "huangxuan.me",
-  "yanshuo.io",
   "cdnjs.cloudflare.com"
 ]
 
@@ -110,6 +108,10 @@ self.addEventListener('fetch', event => {
   console.log(`fetch ${event.request.url}`)
   //console.log(` - type: ${event.request.type}; destination: ${event.request.destination}`)
   //console.log(` - mode: ${event.request.mode}, accept: ${event.request.headers.get('accept')}`)
+
+  // Audio/video use Range requests, which the cache-busting fetch below would break.
+  const dest = event.request.destination;
+  if (dest === 'audio' || dest === 'video' || event.request.headers.has('range')) return;
 
   // Skip some of cross-origin requests, like those for Google Analytics.
   if (HOSTNAME_WHITELIST.indexOf(new URL(event.request.url).hostname) > -1) {

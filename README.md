@@ -1,16 +1,47 @@
-本项目仅仅是为了前来Fork的朋友保留的，原则上不再更新。本项目示范网站地址为：https://klovien.github.io 。
+# F9O1OvO 的博客
 
-三叶草国际语已更名为“格罗比言·全球语”，新的项目地址为：
+基于 Jekyll + GitHub Pages，地址：https://f9o1ovo.github.io
 
-* 中文版：https://gitee.com/globien/globien
-* 英文版：https://github.com/globien/globien.github.io
+## 写文章
 
-### 致谢
+在 `_posts/` 下新建 `YYYY-MM-DD-名字.md`，头部格式：
 
-1. 这个模板是从这里 [BY](https://github.com/qiubaiying/qiubaiying.github.io) fork 的, 感谢作者BY。 
-2. BY的模板应该是从这个模板 [Hux](https://github.com/Huxpro/huxpro.github.io) fork 的, 也一起感谢一下。
-3. 感谢 Jekyll、Github Pages 和 Bootstrap!
+```yaml
+---
+layout:     post
+title:      标题
+subtitle:   副标题
+date:       2026-09-24
+author:     F9O1
+header-img: img-post/xxx.jpg
+catalog: false
+tags:
+    - 标签
+music:
+    - music/歌名.mp3
+    - { title: 自定义显示名, src: music/另一首.mp3 }
+---
+```
 
-### License
+## 文章背景音乐
 
-遵循 MIT 许可证。有关详细,请参阅 [LICENSE](https://github.com/klovien/klovien.github.io/blob/master/LICENSE)。
+- 音乐文件放在 `music/` 目录，在文章头部的 `music` 里按顺序列出路径（相对网站根目录，也可以写 `https://` 外链）。
+- 打开文章后右下角会出现播放器，按列表顺序循环播放；只有一首时单曲循环。
+- 不写 `music` 或者列表为空，就不显示播放器。
+- 浏览器默认禁止带声音的自动播放，所以通常要在页面上点一下之后才开始播放。
+
+## 目录
+
+| 路径 | 说明 |
+| --- | --- |
+| `_posts/` | 文章 |
+| `_drafts/` | 草稿，不会发布（本地 `jekyll serve --drafts` 可预览） |
+| `img-post/` | 文章配图 |
+| `music/` | 文章背景音乐 |
+| `harmonica/` | 口琴小工具 |
+| `_layouts/`, `_includes/` | 页面模板 |
+| `less/` → `css/` | 样式源码与编译产物（`grunt` 编译） |
+
+## 致谢
+
+主题来自 [BY](https://github.com/qiubaiying/qiubaiying.github.io)，其前身是 [Hux](https://github.com/Huxpro/huxpro.github.io)。遵循 MIT 许可证，见 [LICENSE](LICENSE)。

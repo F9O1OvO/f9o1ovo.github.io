@@ -8,6 +8,9 @@ header-img: img-post/微信图片_20241231170717.jpg
 catalog: false
 tags:
     - 拾光
+music:
+#    - music/歌名.mp3
+#    - { title: 自定义显示名, src: music/另一首.mp3 }
 ---
 
 
