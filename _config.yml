@@ -12,7 +12,7 @@ github_repo: "https://github.com/F9O1OvO/f9o1ovo.github.io" # you code repositor
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: " "
-sidebar-avatar: https://storage.live.com/users/0x02275170140eafd5/myprofile/expressionprofile/profilephoto:UserTileStatic/p?ck=1&ex=720&sid=19A476E409C0683E38166382088A691E&fofoff=1      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: /img/avatar.jpg
 
 
 

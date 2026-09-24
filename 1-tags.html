@@ -50,6 +50,9 @@ permalink: /tags/
 				  </li> -->
 				 <div class="post-preview">
 				    <a href="{{ post.url | prepend: site.baseurl }}">
+				        {% if post.header-img %}
+				        <img class="post-cover" src="{{ post.header-img | prepend: '/' | prepend: site.baseurl | replace: '//', '/' }}" alt="{{ post.title }} 的封面" loading="lazy">
+				        {% endif %}
 				        <h2 class="post-title">
                             {{ post.title }}
 				        </h2>

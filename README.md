@@ -84,7 +84,7 @@ waline:
 | 配置 | 作用 |
 | --- | --- |
 | `title` / `description` | 站名、首页描述 |
-| `sidebar-avatar` | 侧栏头像。外链失效时改成 `/img/avatar.jpg` |
+| `sidebar-avatar` | 侧栏头像，现在是 `/img/avatar.jpg` |
 | `sidebar-about-description` | 侧栏简介 |
 | `github_username` | 有值时页脚和侧栏出现 GitHub 图标；删掉这一行就没有 |
 | `email` | 侧栏邮箱 |
