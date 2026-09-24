@@ -1,6 +1,6 @@
 {
-  "name": "半音阶口琴",
-  "short_name": "口琴",
+  "name": "三角洲口琴模拟器",
+  "short_name": "三角洲口琴模拟器",
   "start_url": "./",
   "display": "standalone",
   "orientation": "landscape",
