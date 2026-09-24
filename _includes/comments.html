@@ -2,9 +2,22 @@
 <link rel="stylesheet" href="{{ '/js/waline/waline.css' | prepend: site.baseurl }}">
 <style>
     #waline {
-        margin-top: 40px;
+        margin-top: 48px;
+        --waline-font-size: 1.1rem;
         --waline-theme-color: #0085a1;
         --waline-active-color: #00a7c9;
+        --waline-avatar-size: 3.5rem;
+    }
+    #waline .wl-panel {
+        border-radius: 8px;
+    }
+    #waline .wl-editor {
+        min-height: 8em;
+    }
+    @media (max-width: 767px) {
+        #waline {
+            --waline-font-size: 1rem;
+        }
     }
 </style>
 <div id="waline"></div>

@@ -6,6 +6,9 @@ description: "失败总是贯穿始终"
 {% for post in paginator.posts %}
 <div class="post-preview">
     <a href="{{ post.url | prepend: site.baseurl }}">
+        {% if post.header-img %}
+        <img class="post-cover" src="{{ post.header-img | prepend: site.baseurl | prepend: '/' | replace: '//', '/' }}" alt="{{ post.title }} 的封面" loading="lazy">
+        {% endif %}
         <h2 class="post-title">
             {{ post.title }}
         </h2>
@@ -18,8 +21,14 @@ description: "失败总是贯穿始终"
             {{ post.content | strip_html | truncate:200 }}
         </div>
     </a>
+    {% assign post_characters = post.content | strip_html | size %}
+    {% assign reading_minutes = post_characters | divided_by: 500 | plus: 1 %}
     <p class="post-meta">
-        Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}
+        {{ post.date | date: "%Y年%-m月%-d日" }}
+        <span class="meta-dot">·</span>
+        {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %}
+        <span class="meta-dot">·</span>
+        约 {{ reading_minutes }} 分钟阅读
     </p>
 </div>
 <hr>

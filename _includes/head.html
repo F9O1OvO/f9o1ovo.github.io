@@ -31,6 +31,15 @@
 
     <!-- Font Awesome 4.6.3 -->
     <link rel="stylesheet" href="{{ "/css/font-awesome.min.css" | prepend: site.baseurl }}">
+    <link rel="stylesheet" href="{{ "/css/site.css" | prepend: site.baseurl }}">
+
+    <script>
+        (function () {
+            if (localStorage.getItem('site-theme') === 'dark') {
+                document.documentElement.classList.add('dark-mode-pending');
+            }
+        })();
+    </script>
 
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
