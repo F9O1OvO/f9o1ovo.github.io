@@ -30,6 +30,14 @@ music:
 - 不写 `music` 或者列表为空，就不显示播放器。
 - 浏览器默认禁止带声音的自动播放，所以通常要在页面上点一下之后才开始播放。
 
+## 评论区
+
+使用 [Waline](https://waline.js.org)：读者不用登录，昵称、邮箱、网址都可以不填，不填昵称就显示为“匿名”。
+
+- 前端文件放在 `js/waline/`（本地托管，不走国外 CDN），配置在 `_includes/comments.html`。
+- 需要先按 [Waline 官方文档](https://waline.js.org/guide/get-started/) 部署一个服务端，然后把地址填到 `_config.yml` 的 `waline.serverURL`。留空时不显示评论区。
+- 管理后台在 `服务端地址/ui`，第一个注册的账号就是管理员，可以删评论；服务端设置环境变量 `COMMENT_AUDIT=true` 可以开启“评论需审核后才显示”。
+
 ## 目录
 
 | 路径 | 说明 |

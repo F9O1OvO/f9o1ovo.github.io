@@ -5,7 +5,7 @@
         - { title: 歌名, src: music/yyy.mp3 }
 -->
 <div id="music-player" class="music-player" style="display:none;">
-    <audio id="music-audio" preload="auto"></audio>
+    <audio id="music-audio" preload="none"></audio>
     <button type="button" class="mp-btn" id="mp-prev" title="上一首"><i class="fa fa-step-backward"></i></button>
     <button type="button" class="mp-btn mp-play" id="mp-toggle" title="播放 / 暂停"><i class="fa fa-play"></i></button>
     <button type="button" class="mp-btn" id="mp-next" title="下一首"><i class="fa fa-step-forward"></i></button>
@@ -189,15 +189,24 @@
     $player.style.display = '';
     load(0);
 
-    // Browsers block autoplay with sound until the user interacts with the page.
-    play().catch(function () {
-        var events = ['click', 'touchstart', 'keydown'];
-        function start(e) {
+    var events = ['click', 'touchstart', 'keydown'];
+    function start(e) {
+        events.forEach(function (ev) { document.removeEventListener(ev, start, true); });
+        if ($player.contains(e.target)) return;
+        if (audio.paused) play();
+    }
+    events.forEach(function (ev) { document.addEventListener(ev, start, true); });
+
+    // Hold the (large) audio download until the page's own images have loaded.
+    function autoplay() {
+        if (!audio.paused) return;
+        audio.preload = 'auto';
+        // Browsers block autoplay with sound until the user interacts with the page.
+        play().then(function () {
             events.forEach(function (ev) { document.removeEventListener(ev, start, true); });
-            if ($player.contains(e.target)) return;
-            if (audio.paused) play();
-        }
-        events.forEach(function (ev) { document.addEventListener(ev, start, true); });
-    });
+        }, function () {});
+    }
+    if (document.readyState === 'complete') autoplay();
+    else window.addEventListener('load', autoplay);
 })();
 </script>

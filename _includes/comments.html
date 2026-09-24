@@ -1,0 +1,31 @@
+{% if site.waline.serverURL %}
+<link rel="stylesheet" href="{{ '/js/waline/waline.css' | prepend: site.baseurl }}">
+<style>
+    #waline {
+        margin-top: 40px;
+        --waline-theme-color: #0085a1;
+        --waline-active-color: #00a7c9;
+    }
+</style>
+<div id="waline"></div>
+<script src="{{ '/js/waline/waline.umd.js' | prepend: site.baseurl }}"></script>
+<script>
+    Waline.init({
+        el: '#waline',
+        serverURL: {{ site.waline.serverURL | jsonify }},
+        lang: 'zh-CN',
+        // Comment without an account; every field below is optional, blank nickname shows as 匿名.
+        login: 'disable',
+        meta: ['nick', 'mail', 'link'],
+        requiredMeta: [],
+        locale: {
+            placeholder: '无需登录即可评论。昵称可以不填，不填就是匿名；邮箱只用来接收回复提醒，不会公开。'
+        },
+        // Waline's default emoji / GIF sources (unpkg, Giphy) are slow or blocked in mainland China.
+        emoji: ['https://registry.npmmirror.com/@waline/emojis/1.4.0/files/weibo'],
+        search: false,
+        imageUploader: false,
+        pageSize: 10
+    });
+</script>
+{% endif %}

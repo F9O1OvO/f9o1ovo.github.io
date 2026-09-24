@@ -55,19 +55,10 @@ kramdown:
 
 
 
-# 评论系统
-# Disqus（https://disqus.com/）
-# disqus_username:
-
-# Gitalk
-# gitalk:
-#   enable: true    #是否开启Gitalk评论
-#   clientID:       #生成的clientID
-#   clientSecret:   #生成的clientSecret
-#   repo: f9o1ovo.github.io    #仓库名称
-#   owner: F9O1OvO    #github用户名
-#   admin: F9O1OvO
-#   distractionFreeMode: true #是否启用类似FB的阴影遮罩
+# 评论系统 Waline（https://waline.js.org）：无需登录，可匿名
+# serverURL 填部署好的 Waline 服务端地址，留空则文章下不显示评论区
+waline:
+  serverURL: "https://walinetest-f9o1ovo.vercel.app"
 
 
 # 统计
